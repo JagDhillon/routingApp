@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+	<title>Consent Volume</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+	 crossorigin="" />
+	<script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js" integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA=="
+	 crossorigin=""></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+
+
+</head>
+
+<body>
+
+
+
+	<div id="mapid" style="height: 900px;"></div>
+	<div id="dataControls">
+		<table style="width:100%">
+			<tr>
+				<th align="left">
+					<div id="selectedStates">
+						<input type="checkbox" name="state1" value="NSW">NSW<br>
+						<input type="checkbox" name="state2" value="ACT">ACT<br>
+						<input type="checkbox" name="state3" value="QLD">QLD<br>
+						<input type="checkbox" name="state4" value="VIC">VIC<br>
+						<input type="checkbox" name="state5" value="TAS">TAS<br>
+						<input type="checkbox" name="state6" value="SA" checked="true">SA<br>
+						<input type="checkbox" name="status1" value="All">All<br>
+					</div>
+				</th>
+				<th align="left">
+					<div id="volume">
+						Consent Volume
+						<input type="number" id="volumeLow" min="0" max="9999" value=0>
+						To
+						<input type="number" id="volumeHigh" min="0" max="9999" value=9999>
+					</div>
+				</th>
+
+				<th align="left">
+					<div id="selectedStatus">
+						<input type="checkbox" name="status2" value="Granted">Granted<br>
+						<input type="checkbox" name="status3" value="Refused">Refused<br>
+						<input type="checkbox" name="status4" value="Granted With Conditions">Granted With Conditions<br>
+						<input type="checkbox" name="status5" value="Granted - Notice">Granted - Notice<br>
+						<input type="checkbox" name="status6" value="Granted - Pre-Approval">Granted - Pre-Approval<br>
+						<input type="checkbox" name="status1" value="All" checked="true">All (including above)<br>
+					</div>
+				</th>
+
+				<th align="left">
+					<div id="selectedFinyear">
+						<input type="checkbox" name="finyear2" value="2017-18">2017-18<br>
+						<input type="checkbox" name="finyear3" value="2018-19">2018-19<br>
+						<input type="checkbox" name="finyear1" value="2016-17">2016-17<br>
+						<input type="checkbox" name="status1" value="All" checked="true">All<br>
+					</div>
+				</th>
+
+				<th align="left">
+					<div id="selectedVehicletype">
+						<input type="checkbox" name="vehicletype1" value="Prime mover towing OS/OM/OSOM load">Prime mover towing
+						OS/OM/OSOM load<br>
+						<input type="checkbox" name="vehicletype2" value="PBS vehicle">PBS vehicle<br>
+						<input type="checkbox" name="vehicletype3" value="SPV All Terrain Crane">SPV All Terrain Crane<br>
+						<input type="checkbox" name="vehicletype4" value="Custom">Custom<br>
+						<input type="checkbox" name="vehicletype5" value="A doubles">A doubles<br>
+						<input type="checkbox" name="vehicletype6" value="B-Double">B-Double<br>
+						<input type="checkbox" name="vehicletype7" value="Rigid Truck Towing Trailer">Rigid Truck Towing Trailer<br>
+						<input type="checkbox" name="vehicletype7" value="B-Double (Livestock)">B-Double (Livestock)<br>
+						<input type="checkbox" name="vehicletype8" value="All" checked="true">All (including above)<br>
+					</div>
+				</th>
+
+				<th align="left">
+					<div id="selectedFreighttype">
+						<input type="checkbox" name="freighttype1" value="Commodity">Commodity<br>
+						<input type="checkbox" name="freighttype1" value="Other">Other<br>
+						<input type="checkbox" name="freighttype1" value="Livestock">Livestock<br>
+						<input type="checkbox" name="freighttype1" value="General Freight">General Freight<br>
+						<input type="checkbox" name="freighttype1" value="None">None<br>
+						<input type="checkbox" name="freighttype1" value="Dangerous Goods">Dangerous Goods<br>
+						<input type="checkbox" name="freighttype1" value="Vehicle Carrier">Vehicle Carrier<br>
+						<input type="checkbox" name="status1" value="All" checked="true">All (including above)<br>
+					</div>
+				</th>
+			</tr>
+		</table>
+
+		<button onclick="drawConsents()">Draw Consents</button>
+
+	</div>
+
+
+
+
+	<script>
+		var mapWmsLayer;
+
+		const LOW = 0;
+		const HIGH = 9999;
+
+		var mymap = L.map('mapid').setView([-30.40067, 135.17770], 7);
+
+
+		L.tileLayer(
+			'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+				maxZoom: 18,
+				attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+					'<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+					'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+				id: 'mapbox.streets'
+			}).addTo(mymap);
+
+
+		var mapWmsLayer = L.tileLayer.wms("http://localhost:8090/geoserver/nhvr/wms", {
+			layers: 'nhvr:aus_nfn_roads',
+			format: 'image/png',
+			//viewparams: vpString,
+			//viewparams: "stateVal:('SA');volumeVal:10",
+			transparent: true
+		});
+
+		mapWmsLayer.addTo(mymap);
+
+
+		var wellmaxzoom = 15;
+		//var geojsonLayerStreets = new L.GeoJSON();
+		var geojsonLayerStreets = new L.geoJSON('', {
+			style: streetStyle,
+			onEachFeature: streetOnEachFeature
+		});
+
+		var selection;
+		var selectedLayer;
+
+		// define the styles for the garden layer (unselected and selected)
+		function streetStyle(feature) {
+			return {
+				fillColor: "#FF00FF",
+				fillOpacity: 1,
+				color: '#B04173',
+			};
+		}
+
+		function streetSelectedStyle(feature) {
+			return {
+				fillColor: "#00FFFB",
+				color: '#0000FF',
+				fillOpacity: 1
+			};
+		}
+
+
+		function loadGeoJson(data) {
+			console.log(data);
+			geojsonLayerStreets.addData(data);
+			//mymap.addLayer(geojsonLayerStreets);
+
+			/*geojsonLayerStreets = new L.geoJSON(data, {
+				style: streetStyle,
+				onEachFeature: streetOnEachFeature
+			});
+*/
+			geojsonLayerStreets.addTo(mymap);
+		};
+
+		// handle click events on garden features
+		function streetOnEachFeature(feature, layer) {
+			layer.on({
+				click: function (e) {
+					if (selection) {
+						resetStyles();
+					}
+
+					e.target.setStyle(streetSelectedStyle());
+					selection = e.target;
+					selectedLayer = geojsonLayerStreets;
+
+					// Insert some HTML with the feature name
+					buildSummaryLabel(feature);
+
+					L.DomEvent.stopPropagation(e); // stop click event from being propagated further
+				}
+			});
+		};
+
+		// handle clicks on the map that didn't hit a feature
+		mymap.addEventListener('click', function (e) {
+			if (selection) {
+				resetStyles();
+				selection = null;
+			}
+		});
+
+		// function to set the old selected feature back to its original symbol. Used when the map or a feature is clicked.
+		function resetStyles() {
+			if (selectedLayer === geojsonLayerStreets) selectedLayer.resetStyle(selection);
+		}
+
+		// function to build the HTML for the summary label using the selected feature's "name" property
+		function buildSummaryLabel(currentFeature) {
+			//var featureName = currentFeature.properties.name || "Unnamed feature";
+			var fProps = currentFeature.properties;
+			for (i in currentFeature.properties)
+				console.log(i + ' => ' + fProps[i]);
+		}
+
+		mymap.on('moveend', function () {
+			if (mymap.getZoom() > wellmaxzoom) {
+				var geoJsonUrl = 'http://localhost:8090/geoserver/nhvr/ows';
+				var defaultParameters = {
+					service: 'WFS',
+					version: '1.0.0',
+					request: 'getFeature',
+					typeName: 'nhvr:edgesnewstead',
+					maxFeatures: 3000,
+					outputFormat: 'application/json',
+					srsName: 'EPSG:4326'
+				};
+
+				var sw = mymap.options.crs.project(mymap.getBounds().getSouthWest());
+				var ne = mymap.options.crs.project(mymap.getBounds().getNorthEast());
+				var BBOX = sw.x + "," + sw.y + "," + ne.x + "," + ne.y;
+
+				var customParams = {
+					//bbox: mymap.getBounds().toBBoxString(),
+					bbox: BBOX,
+				};
+				var parameters = L.Util.extend(defaultParameters, customParams);
+				console.log(geoJsonUrl + L.Util.getParamString(parameters));
+
+				$.ajax({
+					url: geoJsonUrl + L.Util.getParamString(parameters),
+					datatype: 'json',
+					jsonCallback: 'getJson',
+					success: loadGeoJson
+				});
+			} else {
+				console.log("Zoom: " + mymap.getZoom());
+				geojsonLayerStreets.clearLayers();
+				geojsonLayerStreets.remove()
+			};
+		});
+
+
+		function drawConsents() {
+
+			if (mapWmsLayer) {
+				mapWmsLayer.remove();
+			}
+
+			var vpString = constructKeyValueString();
+
+			var mapWmsLayer = L.tileLayer.wms("http://localhost:8090/geoserver/nhvr/wms", {
+				layers: 'nhvr:volumeCount',
+				format: 'image/png',
+				viewparams: vpString,
+				//viewparams: "stateVal:('SA');volumeVal:10",
+				transparent: true
+			});
+
+			mapWmsLayer.addTo(mymap);
+
+			return;
+		}
+
+		function constructKeyValueString() {
+			var vpString = '';
+
+			vpString += 'volumeLow:' + document.getElementById('volumeLow').value + ';';
+			vpString += 'volumeHigh:' + document.getElementById('volumeHigh').value + ';';
+
+			var valueString = '';
+			valueString = constructValueStringFromChkBxs('selectedStates');
+			if (valueString) vpString += 'stateVal:state in ' + valueString + ';';
+			//vpString += 'statusVal:' + constructValueStringFromChkBxs('selectedStatus') + ';';
+			valueString = constructValueStringFromChkBxs('selectedFinyear');
+			if (valueString) vpString += 'finyearVal:finyear in ' + valueString + ';';
+			//vpString += 'vehicletypeVal:' + constructValueStringFromChkBxs('selectedVehicletype') + ';';
+			//vpString += 'freighttypeVal:' + constructValueStringFromChkBxs('selectedFreighttype') + ';';
+
+			vpString = vpString.slice(0, -1); //Drop the ending ';'
+			console.log('Param String: ' + vpString);
+			return vpString;
+		}
+
+		function constructValueStringFromChkBxs(groupDivId) {
+			var valueString = '(';
+
+			var c = document.getElementById(groupDivId).children;
+
+			var i;
+			for (i = 0; i < c.length; i++) {
+				if (c[i].tagName === 'INPUT') {
+					if (c[i].checked) {
+						if (c[i].value === 'All') {
+							return '';
+						}
+						if (c[i].value === '2017-18') {
+							valueString += "'" + "2017\-18" + "'\\,";
+						} else {
+						valueString += "'" + c[i].value + "'\\,";
+						}
+					}
+				}
+			}
+
+			valueString = valueString.slice(0, -2); //Drop the ending '\,'
+			valueString += ')';
+
+			return valueString;
+		}
+	</script>
+</body>
+
+</html>

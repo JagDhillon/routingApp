@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+	<title>WFS</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css"
+		integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+		crossorigin="" />
+	<script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"
+		integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA=="
+		crossorigin=""></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+	<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+	<style>
+		table {
+			font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+			border-collapse: collapse;
+			width: 100%;
+		}
+
+		table td,
+		table th {
+			border: 1px solid #ddd;
+			padding: 8px;
+		}
+
+		table tr:nth-child(even) {
+			background-color: #f2f2f2;
+		}
+
+		table tr:hover {
+			background-color: #ddd;
+		}
+
+		table th {
+			padding-top: 12px;
+			padding-bottom: 12px;
+			text-align: left;
+			background-color: #4CAF50;
+			color: white;
+		}
+
+		.container {
+			width: 100%;
+			margin: auto;
+			padding: 10px;
+		}
+
+		.myForm {
+			width: 20%;
+			height: 950px;
+			float: left;
+		}
+
+		.myMap {
+			margin-left: 22%;
+			background: black;
+			height: 950px;
+		}
+
+		button,
+		.enableStyle {
+			margin: 10px 0px;
+			background-color: #4CAF50;
+			color: white;
+			padding: 15px 32px;
+			font-size: 16px;
+		}
+
+		button,
+		.disableStyle {
+			border: 1px solid #999999;
+			background-color: #cccccc;
+			color: #666666;
+		}
+
+
+		#snackbar {
+			visibility: hidden;
+			min-width: 250px;
+			margin-left: -125px;
+			background-color: #333;
+			color: #fff;
+			text-align: center;
+			border-radius: 2px;
+			padding: 16px;
+			position: fixed;
+			z-index: 1;
+			left: 50%;
+			bottom: 30px;
+			font-size: 17px;
+		}
+
+		#snackbar.show {
+			visibility: visible;
+			-webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+			animation: fadein 0.5s, fadeout 0.5s 2.5s;
+		}
+
+		@-webkit-keyframes fadein {
+			from {
+				bottom: 0;
+				opacity: 0;
+			}
+
+			to {
+				bottom: 30px;
+				opacity: 1;
+			}
+		}
+
+		@keyframes fadein {
+			from {
+				bottom: 0;
+				opacity: 0;
+			}
+
+			to {
+				bottom: 30px;
+				opacity: 1;
+			}
+		}
+
+		@-webkit-keyframes fadeout {
+			from {
+				bottom: 30px;
+				opacity: 1;
+			}
+
+			to {
+				bottom: 0;
+				opacity: 0;
+			}
+		}
+
+		@keyframes fadeout {
+			from {
+				bottom: 30px;
+				opacity: 1;
+			}
+
+			to {
+				bottom: 0;
+				opacity: 0;
+			}
+		}
+
+
+
+		body.loading .loader {
+			visibility: visible;
+		}
+
+
+		.loader {
+			visibility: hidden;
+		}
+	</style>
+
+</head>
+
+<body>
+
+
+	<section class="container">
+		<div id="updateForm" class="myForm">
+			<div>
+				<table id="myTable">
+					<tr>
+						<th>Attribute</th>
+						<th>Value</th>
+					</tr>
+					<tr>
+						<td>Is Tollway? (Y/N)</td>
+						<td contenteditable="true"></td>
+					</tr>
+					<tr>
+						<td>Link Id</td>
+						<td id="segLinkId"></td>
+					</tr>
+					<tr>
+						<td>Is B-double? (Y/N)</td>
+						<td contenteditable="true"></td>
+					</tr>
+					<tr>
+						<td>RM Code</td>
+						<td contenteditable="true"></td>
+					</tr>
+					<tr>
+						<td>Street, Suburb</td>
+						<td contenteditable="true"></td>
+					</tr>
+					<tr>
+						<td>From Node Id</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>To Node Id</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>Height Restriction (cms)</td>
+						<td contenteditable="true"></td>
+					</tr>
+					<tr>
+						<td>Offline? (Y/N)</td>
+						<td contenteditable="true" id="segOffline"></td>
+					</tr>
+				</table>
+			</div>
+			<button id="myButton" onclick="updateRoadSegment()" class="disableStyle">Update Road Segment</button>
+
+			<div>
+				<table id="myTable">
+					<tr>
+						<th>Attribute</th>
+						<th>Value</th>
+					</tr>
+					<tr>
+						<td>Start</td>
+						<td contenteditable="true" id="routeStartNode">316061914</td>
+					</tr>
+					<tr>
+						<td>Destination</td>
+						<td contenteditable="true" id="routeEndNode">316112198</td>
+					</tr>
+					<tr>
+						<td>Vehcile Height (cms)</td>
+						<td contenteditable="true" id="routeHeight">200</td>
+					</tr>
+					<tr>
+						<td>Avoid Tollway? (Y/N)</td>
+						<td contenteditable="true" id="routeToll">N</td>
+					</tr>
+				</table>
+			</div>
+			<button id="solveButton" onclick="solveRoute()">Solve Route</button>
+			<div class="loader"><img src='/images/ajax-loader-bert.gif'></div>
+
+			<div id="snackbar">Road segment saved!</div>
+		</div>
+		<div id="mapid" class="myMap"></div>
+
+	</section>
+
+
+	<script>
+
+		//	var mymap = L.map('mapid').setView([-27.4495, 153.04231], 13);
+		var table = document.getElementById("myTable");
+		var updateForm = document.getElementById("updateForm");
+		var myButton = document.getElementById("myButton");
+		var allFeatures;
+
+		$body = $("body");
+
+		$(document).on({
+			ajaxStart: function () { $body.addClass("loading"); },
+			ajaxStop: function () { $body.removeClass("loading"); }
+		});
+
+		var mapboxStreet = L.tileLayer(
+			'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+				maxZoom: 18,
+				attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+					'<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+					'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+				id: 'mapbox.streets'
+			}),
+			googleSatellite = L.tileLayer(
+				'http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+					maxZoom: 18,
+					subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+				});
+		//googleSatellite.addTo(mymap)			
+
+		var mymap = L.map('mapid', {
+			//center: [-27.4495, 140.04231],
+			//zoom: 5,
+			center: [-27.465946, 153.092209],
+			zoom: 14,
+			layers: [mapboxStreet]
+		});
+
+		var baseMaps = {
+			"Mapbox Streets": mapboxStreet,
+			"Google Satellite": googleSatellite
+		};
+		L.control.layers(baseMaps).addTo(mymap);
+
+
+
+		/*
+				var wmsLayer = L.tileLayer.wms("http://localhost:8090/geoserver/nhvr/wms", {
+					layers: 'nhvr:edgesnewstead',
+					format: 'image/png',
+					transparent: true
+				});
+		
+				wmsLayer.addTo(mymap);
+		*/
+
+		var wellmaxzoom = 15;
+		//var geojsonLayerStreets = new L.GeoJSON();
+		var geojsonLayerStreets = new L.geoJSON('', {
+			style: streetStyle,
+			onEachFeature: streetOnEachFeature
+		});
+
+		var geojsonLayerRoute = new L.geoJSON('', {
+			style: routeStyle,
+			onEachFeature: routeOnEachFeature
+		});
+
+		var selection = [];
+		var selectedLayer;
+
+		// define the styles for the garden layer (unselected and selected)
+		function streetStyle(feature) {
+			switch (feature.properties.rm_code) {
+				case 'QLD21':
+					return {
+						fillColor: "#FF00FF", fillOpacity: 1, color: '#B04173',
+					};
+				case 'RMQLD1':
+					return {
+						fillColor: "#FF00FF", fillOpacity: 1, color: '#2e7d32',
+					};
+			}
+		}
+
+		function routeStyle(feature) {
+			if (feature.properties.height_restriction > 0) {
+				return {
+					fillColor: "#FF00FF", fillOpacity: 1, color: '#990000',
+				};
+			} else {
+				return {
+					fillColor: "#FF00FF", fillOpacity: 1, color: '#009900',
+				};
+			}
+
+		}
+
+		function streetSelectedStyle(feature) {
+			return {
+				fillColor: "#00FFFB",
+				color: '#0000FF',
+				fillOpacity: 1
+			};
+		}
+
+
+		function loadGeoJson(data) {
+			allFeatures = data;
+			console.log(data);
+			geojsonLayerStreets.addData(data);
+			//mymap.addLayer(geojsonLayerStreets);
+
+			/*geojsonLayerStreets = new L.geoJSON(data, {
+				style: streetStyle,
+				onEachFeature: streetOnEachFeature
+			});
+*/
+			geojsonLayerStreets.addTo(mymap);
+		};
+
+		function loadRoute(data) {
+			allFeatures = data;
+			console.log(data);
+			geojsonLayerRoute.addData(data);
+			mymap.fitBounds(geojsonLayerRoute.getBounds());
+			//mymap.addLayer(geojsonLayerStreets);
+
+			/*geojsonLayerStreets = new L.geoJSON(data, {
+				style: streetStyle,
+				onEachFeature: streetOnEachFeature
+			});
+*/
+			geojsonLayerRoute.addTo(mymap);
+		};
+
+
+		// handle click events on features
+		function streetOnEachFeature(feature, layer) {
+			layer.on({
+				click: function (e) {
+					if ((selection.length > 0) && !e.originalEvent.shiftKey) {
+						for (index = 0, len = selection.length; index < len; ++index) {
+							resetStyles(index);
+						}
+					}
+
+					e.target.setStyle(streetSelectedStyle());
+					selection.push(e.target);
+					selectedLayer = geojsonLayerStreets;
+
+					// Insert some HTML with the feature name
+					buildSummaryLabel(feature);
+
+					L.DomEvent.stopPropagation(e); // stop click event from being propagated further
+				}
+			});
+		};
+
+		function routeOnEachFeature(feature, layer) {
+			layer.on({
+				click: function (e) {
+					if ((selection.length > 0) && !e.originalEvent.shiftKey) {
+						for (index = 0, len = selection.length; index < len; ++index) {
+							resetStyles(index);
+						}
+					}
+
+					e.target.setStyle(streetSelectedStyle());
+					selection.push(e.target);
+					selectedLayer = geojsonLayerRoute;
+
+					// Insert some HTML with the feature name
+					buildSummaryLabel(feature);
+
+					L.DomEvent.stopPropagation(e); // stop click event from being propagated further
+				}
+			});
+		};
+
+		// handle clicks on the map that didn't hit a feature
+		mymap.addEventListener('click', function (e) {
+			if (selection.length > 0) {
+				for (index = 0, len = selection.length; index < len; ++index) {
+					resetStyles(index);
+				}
+				selection.length = 0;
+				clearFormRows();
+			}
+		});
+
+		function clearFormRows() {
+			for (i = 1; i < table.rows.length; i++) {
+				var cells = table.rows[i].cells;
+				cells[1].innerHTML = "";
+			}
+			myButton.classList.remove("enableStyle");
+			myButton.classList.add("disableStyle");
+			return;
+		}
+
+		// function to set the old selected feature back to its original symbol. Used when the map or a feature is clicked.
+		function resetStyles(i = 0) {
+			if (selectedLayer === geojsonLayerStreets) selectedLayer.resetStyle(selection[i]);
+		}
+
+		// function to build the HTML for the summary label using the selected feature's "name" property
+		function buildSummaryLabel(currentFeature) {
+			//var featureName = currentFeature.properties.name || "Unnamed feature";
+			var fProps = currentFeature.properties;
+			var attToPrint = ["tollway", "link_id", "isbdoubleroute", "rm_code", "street_suburb", "fromnodeid", "tonodeid", "height_restriction"];
+			var attToPrintMap = [1, 2, 3, 4, 5, 6, 7, 8];
+
+			for (i in fProps) {
+				var indof = attToPrint.indexOf(i)
+				if (indof > -1) {
+					var cells = table.rows[attToPrintMap[indof]].cells;
+					cells[1].innerHTML = fProps[i];
+				}
+			}
+			updateForm.style.display = "block";
+			myButton.classList.remove("disableStyle");
+			myButton.classList.add("enableStyle");
+		}
+
+		/*	 var wmsLayer = L.tileLayer.wms("http://localhost:8090/geoserver/nhvr/wms", {
+        layers: 'nhvr:streets',	
+        format: 'image/png',
+        transparent: true
+    });
+	
+	http://localhost:8090/geoserver/wfs?service=wfs&version=2.0.0&request=GetFeature&typeNames=nhvr:streets
+	*/
+
+		mymap.on('moveend', function () {
+			if (mymap.getZoom() > wellmaxzoom) {
+				var geoJsonUrl = 'http://localhost:8090/geoserver/wfs';
+				var defaultParameters = {
+					service: 'WFS',
+					version: '1.0.0',
+					request: 'getFeature',
+					typeName: 'nhvr:streets',
+					maxFeatures: 4000,
+					outputFormat: 'application/json',
+					srsName: 'EPSG:4326'
+				};
+
+				//var sw = mymap.options.crs.project(mymap.getBounds().getSouthWest());
+				//var ne = mymap.options.crs.project(mymap.getBounds().getNorthEast());
+				var sw = mymap.getBounds().getSouthWest();
+				var ne = mymap.getBounds().getNorthEast();
+				var BBOX = sw.lng + "," + sw.lat + "," + ne.lng + "," + ne.lat;
+
+				var customParams = {
+					//bbox: mymap.getBounds().toBBoxString(),
+					bbox: BBOX,
+				};
+				var parameters = L.Util.extend(defaultParameters, customParams);
+				console.log(geoJsonUrl + L.Util.getParamString(parameters));
+
+				$.ajax({
+					url: geoJsonUrl + L.Util.getParamString(parameters),
+					datatype: 'json',
+					jsonCallback: 'getJson',
+					success: loadGeoJson
+				});
+			} else {
+				console.log("Zoom: " + mymap.getZoom());
+				geojsonLayerStreets.clearLayers();
+				geojsonLayerStreets.remove();
+				clearFormRows();
+			};
+		});
+
+		function updateRoadSegment() {
+			if (selection.length > 0) {
+
+				var pgupdateurl = "/api/v1/streets/" + $('#segLinkId').html();
+				var offline =  $('#segOffline').html();
+				console.log(pgupdateurl);
+
+				for (index = 0, len = selection.length; index < len; ++index) {
+					resetStyles(index);
+				}
+				selection.length = null;
+				clearFormRows();
+
+				$.ajax({
+					url: pgupdateurl,
+					type: 'PUT',
+					data: JSON.stringify({ offline: offline }),
+					contentType: 'application/json; charset=utf-8',
+					success: function (response) {
+						var x = document.getElementById("snackbar");
+						x.className = "show";
+						setTimeout(function () {
+							x.className = x.className.replace("show", "");
+						}, 3000);
+					},
+					error: function () {
+						alert("update street error!");
+					}
+				});
+
+			};
+		};
+
+		function solveRoute() {
+			geojsonLayerRoute.clearLayers();
+			geojsonLayerRoute.remove();
+			var geoJsonUrl = 'http://localhost:8090/geoserver/wfs';
+			var defaultParameters = {
+				service: 'WFS',
+				version: '1.0.0',
+				request: 'getFeature',
+				typeName: 'nhvr:solveRoute',
+				maxFeatures: 20000,
+				outputFormat: 'application/json',
+				srsName: 'EPSG:4326'
+			};
+
+			var STARTNODE = $('#routeStartNode').html();
+			var ENDNODE = $('#routeEndNode').html();
+			var VEHICLEHEIGHT = $('#routeHeight').html();
+			var USETOLLWAY = $('#routeToll').html();
+			var vParams = 'STARTVERTEXID:' + STARTNODE + ';ENDVERTEXID:' + ENDNODE
+				+ ';VEHICLEHEIGHT:' + VEHICLEHEIGHT + ';USETOLLWAY:' + USETOLLWAY;
+
+			var customParams = {
+				viewparams: vParams,
+			};
+			var parameters = L.Util.extend(defaultParameters, customParams);
+			console.log(geoJsonUrl + L.Util.getParamString(parameters));
+
+			$.ajax({
+				url: geoJsonUrl + L.Util.getParamString(parameters),
+				datatype: 'json',
+				jsonCallback: 'getJson',
+				success: loadRoute
+			});
+
+		}
+
+		var markercounter = 0;
+		function onMapClick(e) {
+			markercounter += 1;
+			if (markercounter > 2)
+				return;
+			marker = new L.marker(e.latlng, { draggable: 'true' });
+			marker.on('dragend', function (event) {
+				var marker = event.target;
+				var position = marker.getLatLng();
+				marker.setLatLng(new L.LatLng(position.lat, position.lng), { draggable: 'true' });
+				mymap.panTo(new L.LatLng(position.lat, position.lng))
+				console.log(position.lat, position.lng);
+				getVertex(position.lat, position.lng);
+			});
+			console.log(e.lat, e.lng);
+			getVertex(e.latlng.lat, e.latlng.lng);
+			mymap.addLayer(marker);
+		};
+		mymap.on('click', onMapClick);
+
+		function getVertex(lat, long) {
+			var url = '/streetsApi/getVertex/?';
+
+			var vParams = 'LAT=' + lat + '&LNG=' + long;
+
+			$.ajax({
+				url: url+vParams,
+				type: 'GET',
+				success: setVertex
+			});
+		};
+
+		function setVertex(data) {
+			console.log(data);
+			if (markercounter < 2) {
+				$('#routeStartNode').html(data[0].vertex_id );
+			} else {
+				$('#routeEndNode').html( data[0].vertex_id);
+				solveRoute();
+			};
+			console.log(data);
+
+		};
+		
+		// function getVertex(lat, long) {
+		// 	var geoJsonUrl = 'http://localhost:8090/geoserver/wfs';
+		// 	var defaultParameters = {
+		// 		service: 'WFS',
+		// 		version: '1.0.0',
+		// 		request: 'getFeature',
+		// 		typeName: 'nhvr:getVertex',
+		// 		maxFeatures: 5,
+		// 		outputFormat: 'application/json',
+		// 		srsName: 'EPSG:4326'
+		// 	};
+
+		// 	var vParams = 'LAT:' + lat + ';LONG:' + long;
+
+		// 	var customParams = {
+		// 		viewparams: vParams,
+		// 	};
+		// 	var parameters = L.Util.extend(defaultParameters, customParams);
+		// 	console.log(geoJsonUrl + L.Util.getParamString(parameters));
+
+		// 	$.ajax({
+		// 		url: geoJsonUrl + L.Util.getParamString(parameters),
+		// 		datatype: 'json',
+		// 		jsonCallback: 'getJson',
+		// 		success: setVertex
+		// 	});
+		// };
+
+		// function setVertex(data) {
+		// 	if (markercounter < 2) {
+		// 		$('#routeStartNode').html(data.features[0].id.substr(10));
+		// 	} else {
+		// 		$('#routeEndNode').html(data.features[0].id.substr(10));
+		// 		solveRoute();
+		// 	};
+		// 	console.log(data);
+
+		// };
+
+	</script>
+
+
+
+</body>
+
+</html>

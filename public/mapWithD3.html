@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+  <title>Line generator</title>
+</head>
+
+<style>
+path {
+	fill: none;
+	stroke: #999;
+}
+</style>
+
+<body>
+  <svg width="700" height="110">
+  	<path></path>
+  </svg>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.2/d3.min.js"></script>
+  <script>
+var lineGenerator = d3.line();
+var points = [
+	[0, 80],
+	[100, 100],
+	[200, 30],
+	[300, 50],
+	[400, 40],
+	[500, 80]
+];
+
+var pathData = lineGenerator(points);
+
+// Select the path element and set its d attribute
+d3.select('path')
+	.attr('d', pathData);
+  </script>
+</body>
+</html>
